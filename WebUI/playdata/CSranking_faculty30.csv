@@ -1,0 +1,52 @@
+CSRankingAllArea,College Name,PubCount,Faculty,GRE,FacultyBinary
+1,Carnegie Mellon University,18.3,122,791.3760000000001,big
+2,Massachusetts Institute of Technology,15.0,64,771.8939999999999,big
+3,Stanford University,14.3,55,800.0,big
+4,University of California--Berkeley,11.4,50,789.451,big
+5,University of Illinois--Urbana-Champaign,10.5,55,771.8939999999999,big
+6,University of Washington,10.3,50,795.9760000000001,big
+7,Georgia Institute of Technology,8.9,81,796.5319999999999,big
+8,University of California--San Diego,7.8,49,796.9860000000001,big
+9,Cornell University,6.9,45,800.0,big
+10,University of Michigan,6.8,63,800.0,big
+11,University of Texas--Austin,6.6,43,789.15,big
+12,Columbia University,6.3,49,788.197,big
+13,University of Massachusetts--Amherst,6.2,47,796.0,big
+14,University of Maryland--College Park,5.5,42,791.237,big
+15,University of Wisconsin--Madison,5.1,35,792.955,big
+16,University of Southern California,4.4,47,792.951,big
+17,University of California--Los Angeles,4.3,32,797.263,big
+18,Northeastern University,4.0,46,797.429,big
+19,Purdue University--West Lafayette,3.6,42,771.8939999999999,big
+20,Harvard University,3.4,29,793.704,small
+20,University of Pennsylvania,3.4,32,800.0,big
+22,University of California--Santa Barbara,3.2,28,792.982,small
+22,Princeton University,3.2,27,796.4580000000001,small
+24,New York University,3.0,29,795.61,small
+24,Ohio State University,3.0,39,798.061,big
+26,University of California--Davis,2.9,27,770.617,small
+27,Rutgers The State University of New Jersey--New Brunswick,2.8,33,757.813,big
+27,University of Minnesota--Twin Cities,2.8,37,777.113,big
+29,Brown University,2.5,24,768.32,small
+30,Northwestern University,2.4,35,787.0830000000001,big
+31,Pennsylvania State University,2.3,28,789.677,small
+31,Texas A&M University--College Station,2.3,36,774.6,big
+33,State University of New York--Stony Brook,2.2,33,795.5169999999999,big
+33,Indiana University--Bloomington,2.2,35,764.737,big
+33,Duke University,2.2,22,800.0,small
+33,Rice University,2.2,18,800.0,small
+37,University of Utah,2.1,29,776.4069999999999,small
+37,Johns Hopkins University,2.1,24,766.385,small
+39,University of Chicago,2.0,28,779.2589999999999,small
+40,University of California--Irvine,1.9,28,787.304,small
+41,Boston University,1.6,15,782.5,small
+41,University of Colorado--Boulder,1.6,32,761.1110000000001,big
+41,University of North Carolina--Chapel Hill,1.6,22,794.342,small
+41,Dartmouth College,1.6,18,793.846,small
+45,Yale University,1.5,18,800.0,small
+45,University of Virginia,1.5,18,788.538,small
+45,University of Rochester,1.5,18,786.0260000000001,small
+48,Arizona State University,1.4,14,787.164,small
+48,University of Arizona,1.4,18,784.118,small
+48,Virginia Polytechnic Institute and State University,1.4,32,780.0,big
+48,Washington University in St. Louis,1.4,17,790.0,small

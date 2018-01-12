@@ -1,0 +1,640 @@
+{% load static %}
+<head>
+    <!-- Bootstrap Core CSS -->
+    <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="{% static 'sbadmin/css/sb-admin-2.css' %}" rel="stylesheet">
+
+
+    <!-- Custom Fonts -->
+    <link href="{% static 'font-awesome/css/font-awesome.min.css' %}" rel="stylesheet" type="text/css">
+
+    <!-- jQuery -->
+    <script src="{% static 'jquery/jquery-3.2.1.min.js' %}"></script>
+
+    <!-- Highcharts JavaScript -->
+    <script src="{% static 'highcharts/code/highcharts.js' %}"></script>
+    <script src="{% static 'highcharts/code/modules/exporting.js' %}"></script>
+    <script src="https://code.highcharts.com/modules/gray.js"></script>
+
+</head>
+
+<body>
+<div id="wrapper">
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
+        <ul class="nav navbar-top-links navbar-right">
+            <div>
+                <img src="{% static 'images/header_logo_grey_small.jpg' %}" class="img-responsive"
+                     style="padding-top: 5px">
+            </div>
+        </ul>
+        <!-- /.navbar-top-links -->
+    </nav>
+
+
+    <div id="page-wrapper">
+        <div class="row h-100">
+            <div class="col-lg-3">
+                <div class="row">
+                    <div class="invisible">
+                        <div class="panel panel-info">
+                            <div class="panel-heading">
+                                <h3>PlaceHolder</h3>
+                            </div>
+                            <div class="panel-body">
+                                <h3>PlaceHolder</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="invisible">
+                        <div class="panel panel-info">
+                            <div class="panel-heading">
+                                <h3>PlaceHolder</h3>
+                            </div>
+                             <div class="panel-body">
+                                <h3>PlaceHolder</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="invisible">
+                        <div class="panel panel-info">
+                            <div class="panel-heading">
+                                <h3>PlaceHolder</h3>
+                            </div>
+                             <div class="panel-body">
+                                <h3>PlaceHolder</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="invisible">
+                        <div class="panel panel-info">
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="scatter_div" style="display: none">
+                    <div class="panel panel-info">
+                        <div class="panel-heading">
+                            <h2>Stability
+                                <a id="btn_hide_scatter" style="float: right"><i class="fa fa-arrow-right fa-1x"></i></a>
+                            </h2>
+                        </div>
+                        <div class="panel-body">
+                            <div id="score_scatter" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+                        </div>
+                        <div class="panel-footer">
+                            <h4>Slope at Top-10: {{passed_slope_ten}}. Slope at Top-100: {{passed_slope_hundred}}.</h4>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- ./left cols -->
+            <div class="col-lg-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h1>Ranking Facts</h1>
+                    </div>
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="panel panel-success">
+                                    <div class="panel-heading">
+                                        <h2>Recipe: sort by decreasing scores</h2>
+                                    </div>
+                                    <div class="panel-body">
+                                        <h3>Formula:</h3>
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Attribute</th>
+                                                        <th>Weight</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                     {% for atti,atti_weight in att_weights.items %}
+                                                    <tr class="bg-default">
+                                                        <td>{{ atti }}</td>
+                                                        <td>{{ atti_weight }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div> <!-- /.panel-body -->
+                                </div><!-- /.panel panel-success -->
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="panel panel-green">
+                                    <div class="panel-heading">
+                                        <h2>Important attributes
+                                            <a id="btn_show_correstats" style="float: right">
+                                                <span class="fa fa-arrow-right fa-1x" style="color:white"></span>
+                                            </a>
+                                        </h2>
+                                    </div>
+                                    <div class="panel-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Attribute</th>
+                                                        <th>Coefficient</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for atti_coeff,atti_name in att_correlated %}
+                                                    <tr class="bg-default">
+                                                        <td>{{ atti_name }}</td>
+                                                        <td>{{ atti_coeff }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <!-- /.table-responsive -->
+                                    </div>
+                                    <div class="panel-footer">
+                                        Important when coefficients whose absolute value > {{passed_coef_default}} (coefficient threshold).
+                                        Coefficients computed by linear regression on processing data. Normalized into [-1,1]; ordered by absolute value.
+                                        Positive correlated if coefficient > 0. Otherwise negative correlated.
+                                        <!--<span class="pull-right" style="display:inline-block;">-->
+                                            <!--<a id="btn_show_correstats">-->
+                                                <!--<span class="fa fa-arrow-right fa-2x" style="color:green"></span>-->
+                                            <!--</a>-->
+                                        <!--</span>-->
+                                    </div>
+                                </div> <!-- /. panel panel-green-->
+                            </div> <!-- /. col-lg-6-->
+                        </div><!-- /. row-->
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="panel panel-warning">
+                                    <div class="panel panel-heading">
+                                        <h2>Ingredients in Top 10</h2>
+                                    </div>
+                                    <div class="panel-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Attribute</th>
+                                                        <th>Maximum</th>
+                                                        <th>Median</th>
+                                                        <th>Minimum</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for atti_name,atti_stats_ten in att_stats_topTen.items %}
+                                                    <tr class="bg-default">
+                                                        <td>{{ atti_name }}</td>
+                                                        <td>{{atti_stats_ten.max}}</td>
+                                                        <td>{{atti_stats_ten.median}}</td>
+                                                        <td>{{atti_stats_ten.min}}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <!-- /.table-responsive -->
+                                    </div>
+                                    <!-- /.panel-body -->
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="panel panel-yellow">
+                                    <div class="panel-heading">
+                                        <h2>Ingredients in Overall</h2>
+                                    </div>
+                                    <div class="panel-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Attribute</th>
+                                                        <th>Maximum</th>
+                                                        <th>Median</th>
+                                                        <th>Minimum</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for atti_name,atti_stats_all in att_stats_all.items %}
+                                                    <tr class="bg-default">
+                                                        <td>{{ atti_name }}</td>
+                                                        <td>{{atti_stats_all.max}}</td>
+                                                        <td>{{atti_stats_all.median}}</td>
+                                                        <td>{{atti_stats_all.min}}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <!-- /.table-responsive -->
+                                    </div>
+                                    <!-- /.panel-body -->
+                                </div><!-- /.panel -->
+                            </div><!-- /. col-lg-6 -->
+                        </div><!-- /.larger facts row -->
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="panel panel-info">
+                                    <div class="panel-heading">
+                                        <h2>
+                                            <a id="btn_show_scatter" style="float: left">
+                                                <i class="fa fa-arrow-left fa-1x"></i>
+                                            </a>
+                                            &nbsp;Stability
+                                        </h2>
+                                    </div>
+                                    <div class="panel-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Top-K</th>
+                                                        <th>Stability</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for top_i,stable_i in passed_stable_res.items %}
+                                                    <tr class="bg-default">
+                                                        <td>{{top_i}}</td>
+                                                        {% if stable_i %}
+                                                        <td>Unstable</td>
+                                                        {% else %}
+                                                        <td>Stable</td>
+                                                        {% endif %}
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <!-- /.table-responsive -->
+                                        <!--<div id="score_scatter" style="min-width: 310px; height: 400px; margin: 0 auto"></div>-->
+                                    </div>
+                                    <div class="panel-footer">
+                                        Unstable when slope of fit line in scatter plot >  {{passed_slope_threshold}} (slop threshold). Otherwise it is stable.
+                                        <!--<span class="pull-right">-->
+                                            <!--<a id="btn_show_scatter">-->
+                                                <!--<i class="fa fa-question-circle-o fa-2x" style="color:lightskyblue"></i>-->
+                                            <!--</a>-->
+                                        <!--</span>-->
+                                    </div>
+                                </div> <!-- /.panel panel-info -->
+                            </div><!-- /.col-lg-12 -->
+
+                            <div class="col-lg-6">
+                                <div class="panel panel-primary">
+                                    <div class="panel-heading">
+                                        <h2>Fairness validation
+                                        <a id="btn_show_fairness" style="float: right">
+                                            <i class="fa fa-arrow-right fa-1x" style="color:white"></i>
+                                        </a>
+                                        </h2>
+                                    </div>
+                                    <div class="panel-body">
+                                        {% for atti_name,atti_vi_res in passed_fair_res_oracles.items  %}
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th rowspan="2">{{atti_name}}</th>
+                                                        <th colspan="3" class="text-center">Oracles</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>FA*IR</th>
+                                                        <th>Pairwise</th>
+                                                        <th>Proportion</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for vali,fair_vali in atti_vi_res.items %}
+                                                        <tr class="bg-default">
+                                                            <td>{{ vali }}</td>
+                                                            {% if fair_vali.0 %}
+                                                            <td>Fair
+                                                                <span class="pull-right">
+                                                                <i class="fa fa-check-circle-o fa-2x" style="color:green"></i>
+                                                                </span>
+                                                            </td>
+                                                            {% else %}
+                                                            <td>Unfair
+                                                                <span class="pull-right">
+                                                                <i class="fa fa-times-circle-o fa-2x" style="color:red"></i>
+                                                                </span>
+                                                            </td>
+                                                            {% endif %}
+                                                            {% if fair_vali.1 %}
+                                                            <td>Fair
+                                                                <span class="pull-right">
+                                                                <i class="fa fa-check-circle-o fa-2x" style="color:green"></i>
+                                                                </span>
+                                                            </td>
+                                                            {% else %}
+                                                            <td>Unfair
+                                                                <span class="pull-right">
+                                                                <i class="fa fa-times-circle-o fa-2x" style="color:red"></i>
+                                                                </span>
+                                                            </td>
+                                                            {% endif %}
+                                                            {% if fair_vali.2 %}
+                                                            <td>Fair
+                                                                <span class="pull-right">
+                                                                <i class="fa fa-check-circle-o fa-2x" style="color:green"></i>
+                                                                </span>
+                                                            </td>
+                                                            {% else %}
+                                                            <td>Unfair
+                                                                <span class="pull-right">
+                                                                <i class="fa fa-times-circle-o fa-2x" style="color:red"></i>
+                                                                </span>
+                                                            </td>
+                                                            {% endif %}
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <!-- /.table-responsive -->
+                                        {% endfor %}
+                                    </div>
+                                    <div class="panel-footer">
+                                        Unfair when p-value of corresponding statistical test <= {{passed_alpha_default}} (significance threshold). Otherwise, it is fair.
+                                        <!--<span class="pull-right">-->
+                                            <!--<a id="btn_show_fairness">-->
+                                                <!--<i class="fa fa-arrow-right fa-2x" style="color:royalblue"></i>-->
+                                            <!--</a>-->
+                                        <!--</span>-->
+                                    </div>
+                                </div> <!-- /.panel panel-info -->
+                            </div><!-- /.col-lg-12 -->
+                        </div><!-- /. larger facts row -->
+                    </div> <!-- /. facts panel-body -->
+                </div> <!-- facts panel-->
+            </div>
+            <div class="col-lg-3">
+                <div class="row">
+                    <div class="invisible">
+                        <div class="panel panel-info">
+                            <h5>PlaceHolder</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="corre_stats_div" style="display: none">
+                    <div class="panel panel-green">
+                        <div class="panel-heading">
+                            <h2>
+                                <a id="btn_hide_correstats" style="float: left"><i class="fa fa-arrow-left fa-1x" style="color:white"></i></a>
+                                &nbsp; Ingredients of correlated attributes
+                            </h2>
+                        </div>
+                        <div class="panel-body">
+                            <h3>Top 10:</h3>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Attribute</th>
+                                            <th>Maximum</th>
+                                            <th>Median</th>
+                                            <th>Minimum</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for atti_name,corre_atti_stats in corre_att_stats_topTen.items %}
+                                        <tr class="bg-default">
+                                            <td>{{ atti_name }}</td>
+                                            <td>{{corre_atti_stats.max}}</td>
+                                            <td>{{corre_atti_stats.median}}</td>
+                                            <td>{{corre_atti_stats.min}}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                            <span><br></span>
+                            <h3>Overall:</h3>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Attribute</th>
+                                            <th>Maximum</th>
+                                            <th>Median</th>
+                                            <th>Minimum</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for atti_name,corre_atti_stats_all in corre_att_stats_all.items %}
+                                        <tr class="bg-default">
+                                            <td>{{ atti_name }}</td>
+                                            <td>{{corre_atti_stats_all.max}}</td>
+                                            <td>{{corre_atti_stats_all.median}}</td>
+                                            <td>{{corre_atti_stats_all.min}}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                        </div> <!-- /.panel-body -->
+                    </div> <!-- ./panel -->
+                </div> <!-- ./row-->
+                <div class="row">
+                    <div class="invisible">
+                        <div class="panel panel-info">
+                            <div class="panel-heading">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="fairness_div" style="display: none">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">
+                            <h2>
+                                <a id="btn_hide_fairness" style="float: left"><i class="fa fa-arrow-left fa-1x" style="color:white"></i></a>
+                                &nbsp;Fairness validation
+                            </h2>
+                        </div>
+                        <div class="panel-body">
+                            {% for atti_name,atti_vi_res in passed_fair_all_oracles.items  %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th rowspan="2">{{atti_name}}</th>
+                                            <th colspan="2" class="text-center">FA*IR</th>
+                                            <th colspan="2" class="text-center">Pairwise</th>
+                                            <th colspan="2" class="text-center">Proportion</th>
+                                        </tr>
+                                        <tr>
+                                            <th>p-value</th>
+                                            <th>adjusted &alpha;</th>
+                                            <th>p-value</th>
+                                            <th>&alpha;</th>
+                                            <th>p-value</th>
+                                            <th>&alpha;</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for vali,fair_vali in atti_vi_res.items %}
+                                            <tr class="bg-default">
+                                                <td>{{ vali }}</td>
+                                                <td>{{ fair_vali.0 }}</td>
+                                                <td>{{ fair_vali.1 }}</td>
+                                                <td>{{ fair_vali.2 }}</td>
+                                                <td>{{ fair_vali.3 }}</td>
+                                                <td>{{ fair_vali.4 }}</td>
+                                                <td>{{ fair_vali.5 }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                            {% endfor %}
+                        </div>
+                        <div class="panel-footer">
+                            Top K = {{passed_top_k}} in FA*IR and Proportion oracles.
+                            Setting of top K: In FA*IR and Proportion oracle, if N > 200, set top K =100. Otherwise set top K = 50%N. Pairwise oracle takes whole ranking as input.
+                            FA*IR is computed as using code in <a href="https://github.com/MilkaLichtblau/FA-IR_Ranking">FA*IR codes</a>.
+                            Proportion is implemented as statistical test 4.1.3 in <a href="https://arxiv.org/abs/1511.00148">Proportion paper</a>.
+                        </div>
+                    </div>
+                </div> <!-- ./row-->
+            </div><!-- ./col-lg-3 -->
+
+        </div>
+        <!-- /.row -->
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <div class="form-inline" align="center">
+                            {% if passed_unprocessing_flag %}
+                            <a href="{% url 'rankingfacts:data_process' %}" class="btn btn-default btn-lg">
+                                <span class="glyphicon glyphicon-menu-left"></span>
+                                Previous step (Parameter Settings)</a>
+                            {% else %}
+                            <a href="{% url 'rankingfacts:norm_process' %}" class="btn btn-default btn-lg">
+                                <span class="glyphicon glyphicon-menu-left"></span>
+                                Previous step (Parameter Settings)</a>
+                            {% endif %}
+                            <a href="{% url 'rankingfacts:base' %}" class="btn btn-default btn-lg">
+                                Upload new data
+                                <span class="glyphicon glyphicon-menu-right"></span></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /.row -->
+    </div>
+    <!-- /#page-wrapper -->
+</div>
+<!-- /#wrapper -->
+
+<script type="text/javascript" language="javascript">
+
+    $("#btn_show_correstats").click(function(e){
+        document.getElementById("corre_stats_div").style.display = 'inline';
+    });
+    $("#btn_hide_correstats").click(function(e){
+        document.getElementById("corre_stats_div").style.display = 'none';
+    });
+
+    $("#btn_show_fairness").click(function(e){
+        document.getElementById("fairness_div").style.display = 'inline';
+    });
+    $("#btn_hide_fairness").click(function(e){
+        document.getElementById("fairness_div").style.display = 'none';
+    });
+
+    $("#btn_hide_scatter").click(function(e){
+        document.getElementById("scatter_div").style.display = 'none';
+    });
+    $("#btn_show_scatter").click(function(e){
+        document.getElementById("scatter_div").style.display = 'inline';
+        var chartUrl = "{% url 'rankingfacts:json_scatter_score' %}";
+        $.getJSON(chartUrl, function (data) {
+            $('#score_scatter').highcharts({
+                chart: {
+                    type: 'scatter',
+                    zoomType: 'xy'
+                },
+                title: {
+                    text: 'Stability'
+                },
+                subtitle: {
+                    text: 'ranked on generated scores (top 100)'
+                },
+                xAxis: {
+                    title: {
+                        enabled: true,
+                        text: 'Rank Position'
+                    },
+                    startOnTick: true,
+                    endOnTick: true,
+                    showLastLabel: true
+                },
+                yAxis: {
+                    title: {
+                        text: 'Generated Score'
+                    }
+                },
+                legend: {
+                    layout: 'vertical',
+                    align: 'left',
+                    verticalAlign: 'top',
+                    x: 100,
+                    y: 70,
+                    floating: true,
+                    backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF',
+                    borderWidth: 1
+                },
+                plotOptions: {
+                    scatter: {
+                        marker: {
+                            radius: 5,
+                            states: {
+                                hover: {
+                                    enabled: true,
+                                    lineColor: 'rgb(100,100,100)'
+                                }
+                            }
+                        },
+                        states: {
+                            hover: {
+                                marker: {
+                                    enabled: false
+                                }
+                            }
+                        },
+                        tooltip: {
+                            headerFormat: '<b>{series.name}</b><br>',
+                            pointFormat: 'Ranked at {point.x} , with generated score {point.y} '
+                        }
+                    }
+                },
+                series: [{
+                    name: 'Generated Score',
+                    color: 'rgba(223, 83, 83, .5)',
+                    data: data
+                }]
+            });
+        });
+    });
+
+</script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+
+</body>
