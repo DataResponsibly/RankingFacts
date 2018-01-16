@@ -40,6 +40,42 @@ def get_score_scatter(current_file,top_K=100):
         scatter_points.append([position_value[i], score_value[i]])
     return scatter_points
 
+def getAttValueCount(input_data, att_name):
+    """
+            Subfunction to count values of input attribute in the data for pie chart.
+
+            Attributes:
+                input_data: dataframe that store the input data
+                att_name: name of attribuet to count
+            Return:  two-dimension array for value and its count
+            """
+    cur_values_count = input_data[att_name].value_counts()
+    new_values = []
+    for i in range(len(cur_values_count)):
+        new_values.append([cur_values_count.index[i],int(cur_values_count.values[i])])
+    return new_values
+
+def get_chart_data(current_file, att_names):
+    """
+        Generated data for pie chart.
+
+        Attributes:
+            current_file: file name that stored the data (with out ".csv" suffix)
+            att_names: list of attribute names to compute the chart data
+        Return:  json data for pie chart plot using HighChart format
+        """
+    # TODO: only work for CS ranking dataset now. Generalize it to all datasets later
+    data = pd.read_csv(current_file + "_weightsum.csv")
+    # attributes to generate the pie chart data in above data
+    # ["topTen", "overall"]
+    pie_data = {}
+    for ai in att_names:
+        cur_ai_json = {}
+        cur_ai_json["topTen"] = getAttValueCount(data[0:10],ai)
+        cur_ai_json["overall"] = getAttValueCount(data,ai)
+        pie_data[ai] = cur_ai_json
+    return pie_data
+
 def computeSlopeOfScores(current_file,top_K, round_default=2):
     """
     Compute the slop of scatter plot.
@@ -58,7 +94,7 @@ def computeSlopeOfScores(current_file,top_K, round_default=2):
     slope = par[0][0]
     return round(slope,round_default)
 
-def compute_correlation(current_file,y_col="GeneratedScore",top_threshold=3,round_default=2,coef_threshold=0.5):
+def compute_correlation(current_file,y_col="GeneratedScore",top_threshold=3,round_default=2):
     """
     Compute the correlation between attributes and generated scores.
 
@@ -67,19 +103,22 @@ def compute_correlation(current_file,y_col="GeneratedScore",top_threshold=3,roun
         y_col: column name of Y variable
         top_threshold: threshold of number of returned correlated attribute
         round_default: threshold of round function for the returned coefficient
-        coef_threshold: threshold of coefficient, correlated when coefficient greater than this threshold
     Return:  list of correlated attributes and its coefficients
     """
+    # get the data for generated ranking
     ranking_df = pd.read_csv(current_file+"_weightsum.csv")
+    # get the upload data for correlation computation
     upload_df = pd.read_csv(current_file+".csv")
+
     numeric_atts = list(upload_df.describe().columns)
     X = upload_df[numeric_atts].values
-    # standardize data
-    scaler = StandardScaler()
-    transform_X = scaler.fit_transform(X)
+    #  no need to standardize data
+    # scaler = StandardScaler()
+    # transform_X = scaler.fit_transform(X)
     y = ranking_df[y_col].values
-    regr = linear_model.LinearRegression(normalize=True)
-    regr.fit(transform_X, y)
+
+    regr = linear_model.LinearRegression(normalize=False)
+    regr.fit(X, y)
 
     # get coeff's, ordered by significance
     # format weight with decile of 3
@@ -97,13 +136,14 @@ def compute_correlation(current_file,y_col="GeneratedScore",top_threshold=3,roun
     # coeff_zip = zip(regr.coef_, numeric_atts)
     coeff_zip = zip(stand_coef, numeric_atts)
     coeff_sorted = sorted(coeff_zip, key=lambda tup: abs(tup[0]), reverse=True)
-    coeff_return = []
-    for ci in coeff_sorted:
-        if abs(ci[0]) > coef_threshold:
-            coeff_return.append(ci)
+
+    if len(coeff_sorted) > top_threshold:
+        coeff_return = coeff_sorted[0:top_threshold]
+    else:
+        coeff_return = coeff_sorted
 
     # only return top_threshold most correlated attributes
-    return coeff_return, coef_threshold
+    return coeff_return
 
 def compute_statistic_topN(chosed_atts,current_file,top_N,round_default=1):
     """
@@ -250,6 +290,12 @@ def computePvalueFAIR(att_name,att_value,current_file,top_K,round_default=2):
             generated_ranking.append([index,"pro"])
         else:
             generated_ranking.append([index,"unpro"])
+    # print("*******************")
+    # print(generated_ranking)
+    # print("*******************")
+    # print(fair_p_vi)
+    # print("*******************")
+
     p_value, isFair, posiFail, alpha_c, pro_needed_list = computeFairRankingProbability(top_K,fair_p_vi,generated_ranking)
     return round(p_value,round_default),round(alpha_c,round_default)
 
@@ -300,6 +346,7 @@ def computePvaluePairwise(att_name,att_value,current_file, run_time=100, round_d
 
     # compute the cdf, i.e. p-value of input pair value
     sample_pairs = list(plot_df["pair_n"].dropna())
+
     cdf_pair = Cdf(sample_pairs,pair_N_vi)
     # decide to use left tail or right tail
     # mode_pair_sim,_ = mode(sample_pairs)
@@ -379,13 +426,19 @@ def computeFairRankingProbability(k,p,generated_ranking,default_alpha=0.05):
 
     gft = FairnessInRankingsTester(p, default_alpha, k, correctedAlpha=True)
     posAtFail, isFair = gft.ranked_group_fairness_condition(generated_ranking)
+    # print("*******************FA")
+    # print(posAtFail, isFair)
+    # print("*******************FA")
 
     if isFair:
         # posAtFail = "NA"
         p_value = gft.calculate_p_value_left_tail(k, generated_ranking)
     else:
-        p_value = gft.calculate_p_value_left_tail(posAtFail, generated_ranking)
-
+        # p_value = gft.calculate_p_value_left_tail(posAtFail, generated_ranking)
+        p_value = gft.calculate_p_value_left_tail(k, generated_ranking)
+    # print("*******************FA")
+    # print(p_value,gft.alpha_c)
+    # print("*******************FA")
     return p_value, isFair, posAtFail, gft.alpha_c, gft.candidates_needed
 
 

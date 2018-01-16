@@ -19,4 +19,5 @@ urlpatterns = [
     # urls for results page
     url(r'^nutrition_facts/$', views.nutrition_facts, name='nutrition_facts'),
     url(r'^json_scatter_score/$', views.json_scatter_score, name='json_scatter_score'),
+    url(r'^json_piechart_data/$', views.json_piechart_data, name='json_piechart_data'),
 ]

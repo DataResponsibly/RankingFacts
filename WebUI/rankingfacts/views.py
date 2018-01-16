@@ -6,6 +6,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from django.http import JsonResponse
 
 from synthesizer.lib.DataSynthesizerWrapper import get_histograms_of
 from synthesizer.lib.DataSynthesizerWrapper import get_categorical_attributes_csv
@@ -23,6 +24,7 @@ from .models import runFairOracles
 from .models import getSizeOfRanking
 from .models import getSizeOfDataset
 from .models import compute_correlation
+from .models import get_chart_data
 from DataSynthesizer.lib.utils import read_json_file
 
 
@@ -380,38 +382,51 @@ def nutrition_facts(request):
     chosed_atts_tuple = [(chosed_atts[i],chosed_att_ids_list[i]) for i in range(len(chosed_atts))]
 
     # get size of upload data
-    ranking_data = pd.read_csv(cur_data_name + "_weightsum.csv")
+    total_n = getSizeOfRanking(cur_data_name)
     # compute statistics of top 10 and overall in generated ranking
     att_stats_topTen = compute_statistic_topN(chosed_atts,cur_data_name,10)
-    att_stats_all = compute_statistic_topN(chosed_atts,cur_data_name,len(ranking_data))
-    # compute importance of all numerical attributes
-    att_correlated, coef_default = compute_correlation(cur_data_name)
-    # most_correlated_att = att_correlated[0][1]
+    att_stats_all = compute_statistic_topN(chosed_atts,cur_data_name,total_n)
+    # compute top 3 correlated attributes
+    att_correlated = compute_correlation(cur_data_name)
+
+    low_coef_threshold = 0.25
+    high_coef_threshold = 0.75
+    top3_correlated_attts = {}
+    for ai in att_correlated:
+        ai_coef = abs(ai[0])
+        ai_name = ai[1]
+        if ai_coef >= high_coef_threshold:
+            top3_correlated_attts[ai_name] = [ai_coef,"high"]
+        else:
+            if ai_coef <= low_coef_threshold:
+                top3_correlated_attts[ai_name] = [ai_coef, "low"]
+            else:
+                top3_correlated_attts[ai_name] = [ai_coef, "median"]
 
     # compute statistics of most 3 correlated attributes
     top_corre_atts = [att_correlated[i][1] for i in range(len(att_correlated))]
     corre_att_stats_topTen = compute_statistic_topN(top_corre_atts, cur_data_name, 10)
-    corre_att_stats_all = compute_statistic_topN(top_corre_atts, cur_data_name, len(ranking_data))
+    corre_att_stats_all = compute_statistic_topN(top_corre_atts, cur_data_name, total_n)
 
 
     # compute the slope of generated scores at a specified top-k
-    total_n = getSizeOfRanking(cur_data_name)
-
     # set the slope threshold for stability
     slope_threshold = 0.25
     stable_res = {}
     if total_n >= 100:
         slope_top_ten = computeSlopeOfScores(cur_data_name,10)
         slope_top_hundred = computeSlopeOfScores(cur_data_name, 100)
-        stable_ten = abs(slope_top_ten) > slope_threshold
-        stable_hundred = abs(slope_top_hundred) > slope_threshold
+        stable_ten = abs(slope_top_ten) <= slope_threshold
+        stable_hundred = abs(slope_top_hundred) <= slope_threshold
         stable_res = {"Top-10": stable_ten, "Top-100": stable_hundred}
     else:
         if total_n >=10:
             slope_top_ten = computeSlopeOfScores(cur_data_name, 10)
-            stable_ten = abs(slope_top_ten) > slope_threshold
+            slope_overall = computeSlopeOfScores(cur_data_name, total_n)
+            stable_ten = abs(slope_top_ten) <= slope_threshold
+            stable_overall = abs(slope_overall) <= slope_threshold
             slope_top_hundred = "NA"
-            stable_res = {"Top-10": stable_ten}
+            stable_res = {"Top-10": stable_ten,"Overall": stable_overall}
         else:
             slope_top_ten = "NA"
             slope_top_hundred = "NA"
@@ -420,18 +435,22 @@ def nutrition_facts(request):
     # run the fairness validation for three oracles
     fair_all_oracles, fair_res_oracles, alpha_default, top_K = runFairOracles(checked_sensi_atts,cur_data_name)
 
-
+    # set the attribuets for the pie plot data for CS ranking, TODO: update it to let user choose. now only work for cs ranking
+    pie_atts = ["Regional Code","DeptSizeBin"]
+    pie_att_ids = ["att"+str(i) for i in range(len(pie_atts))]
     context = {'passed_data_name': passed_data_name, "chosed_atts": chosed_atts,
                "att_weights": att_weights, "att_stats_topTen": att_stats_topTen,
                "att_stats_all": att_stats_all, "passed_choosed_att_zip": chosed_atts_zip,
-               "passed_cols_ids": chosed_att_ids_list, "att_correlated": att_correlated,
+               "passed_cols_ids": chosed_att_ids_list, "att_correlated": top3_correlated_attts,
                "corre_att_stats_topTen": corre_att_stats_topTen, "corre_att_stats_all": corre_att_stats_all,
                "chosed_atts_tuple": chosed_atts_tuple, "passed_unprocessing_flag": unprocessed_flag,
                "passed_fair_all_oracles": fair_all_oracles,"passed_fair_res_oracles":fair_res_oracles,
                "passed_slope_ten":slope_top_ten, "passed_slope_hundred":slope_top_hundred,
                "passed_stable_res":stable_res, "passed_slope_threshold":slope_threshold,
-               "passed_alpha_default":alpha_default, "passed_coef_default":coef_default,
-               "passed_top_k":top_K
+               "passed_alpha_default":alpha_default, "passed_coef_high":high_coef_threshold,
+               "passed_top_k":top_K, "passed_coef_low": low_coef_threshold,
+               "passed_slope_overall": slope_overall, "passed_pie_att_ids": pie_att_ids,
+               "passed_pie_atts": pie_atts
                }
     return render(request, 'rankingfacts/ranking_facts_widget.html', context)
 
@@ -445,3 +464,20 @@ def json_scatter_score(request):
 
     scatter_data = get_score_scatter(cur_data_name)
     return HttpResponse(json.dumps(scatter_data), content_type='application/json')
+
+def json_piechart_data(request):
+    passed_data_name = request.session.get('passed_data_name')
+    passed_running_data_flag = request.session.get("running_data")
+    if passed_running_data_flag == "processed":
+        cur_data_name = passed_data_name + "_norm"
+    else:
+        cur_data_name = passed_data_name
+
+    # set the attribuets for the pie plot data for CS ranking,
+    # TODO: read this from server parameter file to let user choose. now only work for cs ranking
+    atts_name = ["Regional Code", "DeptSizeBin"]
+
+    # TODO: only work for CS ranking dataset now. Generalize it to all datasets later
+    piechart_json_data = get_chart_data(cur_data_name,atts_name)
+
+    return HttpResponse(json.dumps(piechart_json_data), content_type='application/json')

@@ -40,45 +40,105 @@
                 <div class="row">
                     <div class="invisible">
                         <div class="panel panel-info">
-                            <div class="panel-heading">
-                                <h3>PlaceHolder</h3>
-                            </div>
-                            <div class="panel-body">
-                                <h3>PlaceHolder</h3>
-                            </div>
+                            <h5>PlaceHolder</h5>
                         </div>
                     </div>
                 </div>
+                <div class="row" id="ranking_stats_div" style="display: none">
+                    <div class="panel panel-success">
+                        <div class="panel-heading">
+                            <h2>
+                                Recipe
+                                <a id="btn_hide_rankingstats" style="float: right">
+                                    <i class="fa fa-arrow-right fa-1x" style="color: darkgreen"></i>
+                                </a>
+                            </h2>
+                        </div>
+                        <div class="panel-body">
+                            <h3>Top 10:</h3>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Attribute</th>
+                                            <th>Maximum</th>
+                                            <th>Median</th>
+                                            <th>Minimum</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for atti_name,atti_stats_ten in att_stats_topTen.items %}
+                                        <tr class="bg-default">
+                                            <td>{{ atti_name }}</td>
+                                            <td>{{atti_stats_ten.max}}</td>
+                                            <td>{{atti_stats_ten.median}}</td>
+                                            <td>{{atti_stats_ten.min}}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                            <span><br></span>
+                            <h3>Overall:</h3>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Attribute</th>
+                                            <th>Maximum</th>
+                                            <th>Median</th>
+                                            <th>Minimum</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for atti_name,atti_stats_all in att_stats_all.items %}
+                                        <tr class="bg-default">
+                                            <td>{{ atti_name }}</td>
+                                            <td>{{atti_stats_all.max}}</td>
+                                            <td>{{atti_stats_all.median}}</td>
+                                            <td>{{atti_stats_all.min}}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                        </div> <!-- /.panel-body -->
+                    </div> <!-- ./panel -->
+                </div> <!-- ./row-->
+                <!--<div class="row">-->
+                    <!--<div class="invisible">-->
+                        <!--<div class="panel panel-info">-->
+                            <!--<div class="panel-heading">-->
+                                <!--<h3>PlaceHolder</h3>-->
+                            <!--</div>-->
+                             <!--<div class="panel-body">-->
+                                <!--<h3>PlaceHolder</h3>-->
+                            <!--</div>-->
+                        <!--</div>-->
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div class="row">-->
+                    <!--<div class="invisible">-->
+                        <!--<div class="panel panel-info">-->
+                            <!--<div class="panel-heading">-->
+                                <!--<h3>PlaceHolder</h3>-->
+                            <!--</div>-->
+                             <!--<div class="panel-body">-->
+                                <!--<h3>PlaceHolder</h3>-->
+                            <!--</div>-->
+                        <!--</div>-->
+                    <!--</div>-->
+                <!--</div>-->
                 <div class="row">
                     <div class="invisible">
                         <div class="panel panel-info">
                             <div class="panel-heading">
-                                <h3>PlaceHolder</h3>
-                            </div>
-                             <div class="panel-body">
-                                <h3>PlaceHolder</h3>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="invisible">
-                        <div class="panel panel-info">
-                            <div class="panel-heading">
-                                <h3>PlaceHolder</h3>
-                            </div>
-                             <div class="panel-body">
-                                <h3>PlaceHolder</h3>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="invisible">
-                        <div class="panel panel-info">
-                        </div>
-                    </div>
-                </div>
+                </div><!-- ./row-->
                 <div class="row" id="scatter_div" style="display: none">
                     <div class="panel panel-info">
                         <div class="panel-heading">
@@ -90,7 +150,8 @@
                             <div id="score_scatter" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
                         </div>
                         <div class="panel-footer">
-                            <h4>Slope at Top-10: {{passed_slope_ten}}. Slope at Top-100: {{passed_slope_hundred}}.</h4>
+                            <h4>Slope at top-10: {{passed_slope_ten}}. Slope overall: {{passed_slope_overall}}.</h4>
+                            Unstable when absolute value of slope of fit line in scatter plot <=  {{passed_slope_threshold}} (slope threshold). Otherwise it is stable.
                         </div>
                     </div>
                 </div>
@@ -105,10 +166,15 @@
                             <div class="col-lg-6">
                                 <div class="panel panel-success">
                                     <div class="panel-heading">
-                                        <h2>Recipe: sort by decreasing scores</h2>
+                                        <h2>
+                                            <a id="btn_show_rankingstats" style="float: left">
+                                                <i class="fa fa-arrow-left fa-1x" style="color: darkgreen"></i>
+                                            </a>
+                                            &nbsp;Recipe
+                                        </h2>
+
                                     </div>
                                     <div class="panel-body">
-                                        <h3>Formula:</h3>
                                         <div class="table-responsive">
                                             <table class="table table-hover">
                                                 <thead>
@@ -133,7 +199,7 @@
                             <div class="col-lg-6">
                                 <div class="panel panel-green">
                                     <div class="panel-heading">
-                                        <h2>Important attributes
+                                        <h2>Ingredients
                                             <a id="btn_show_correstats" style="float: right">
                                                 <span class="fa fa-arrow-right fa-1x" style="color:white"></span>
                                             </a>
@@ -145,14 +211,24 @@
                                                 <thead>
                                                     <tr>
                                                         <th>Attribute</th>
-                                                        <th>Coefficient</th>
+                                                        <th>Correlation</th>
+                                                        <th></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {% for atti_coeff,atti_name in att_correlated %}
+                                                    {% for atti_name,atti_coeff in att_correlated.items %}
                                                     <tr class="bg-default">
                                                         <td>{{ atti_name }}</td>
-                                                        <td>{{ atti_coeff }}</td>
+                                                        <td>{{ atti_coeff.0 }}</td>
+                                                        {% if atti_coeff.1 == "high" %}
+                                                        <td><i class="fa fa-thermometer-full fa-2x" aria-hidden="true" style="color: red"></i></td>
+                                                        {% endif %}
+                                                        {% if atti_coeff.1 == "median" %}
+                                                        <td><i class="fa fa-thermometer-half fa-2x" aria-hidden="true" style="color: cornflowerblue"></i></td>
+                                                        {% endif %}
+                                                        {% if atti_coeff.1 == "low" %}
+                                                        <td><i class="fa fa-thermometer-empty fa-2x" aria-hidden="true" style="color: grey"></i></td>
+                                                        {% endif %}
                                                     </tr>
                                                     {% endfor %}
                                                 </tbody>
@@ -161,14 +237,7 @@
                                         <!-- /.table-responsive -->
                                     </div>
                                     <div class="panel-footer">
-                                        Important when coefficients whose absolute value > {{passed_coef_default}} (coefficient threshold).
-                                        Coefficients computed by linear regression on processing data. Normalized into [-1,1]; ordered by absolute value.
-                                        Positive correlated if coefficient > 0. Otherwise negative correlated.
-                                        <!--<span class="pull-right" style="display:inline-block;">-->
-                                            <!--<a id="btn_show_correstats">-->
-                                                <!--<span class="fa fa-arrow-right fa-2x" style="color:green"></span>-->
-                                            <!--</a>-->
-                                        <!--</span>-->
+                                        Correlation strength is based on its absolute value. Correlation over {{passed_coef_high}} is high, between {{passed_coef_low}} and {{passed_coef_high}} is medium, under {{passed_coef_low}} is low.
                                     </div>
                                 </div> <!-- /. panel panel-green-->
                             </div> <!-- /. col-lg-6-->
@@ -177,32 +246,17 @@
                             <div class="col-lg-6">
                                 <div class="panel panel-warning">
                                     <div class="panel panel-heading">
-                                        <h2>Ingredients in Top 10</h2>
+                                        <h2>Diversity at top-10</h2>
                                     </div>
                                     <div class="panel-body">
-                                        <div class="table-responsive">
-                                            <table class="table table-hover">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Attribute</th>
-                                                        <th>Maximum</th>
-                                                        <th>Median</th>
-                                                        <th>Minimum</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {% for atti_name,atti_stats_ten in att_stats_topTen.items %}
-                                                    <tr class="bg-default">
-                                                        <td>{{ atti_name }}</td>
-                                                        <td>{{atti_stats_ten.max}}</td>
-                                                        <td>{{atti_stats_ten.median}}</td>
-                                                        <td>{{atti_stats_ten.min}}</td>
-                                                    </tr>
-                                                    {% endfor %}
-                                                </tbody>
-                                            </table>
+                                        {% for att_pid in passed_pie_att_ids %}
+                                        <div class="col-lg-6">
+                                            <div id="{{att_pid | safe}}_topTen_pie"></div>
                                         </div>
-                                        <!-- /.table-responsive -->
+                                        {% endfor %}
+                                        <!--<div class="col-lg-6">-->
+                                            <!--<div id="pie_div_top2"></div>-->
+                                        <!--</div>-->
                                     </div>
                                     <!-- /.panel-body -->
                                 </div>
@@ -210,32 +264,20 @@
                             <div class="col-lg-6">
                                 <div class="panel panel-yellow">
                                     <div class="panel-heading">
-                                        <h2>Ingredients in Overall</h2>
+                                        <h2>Diversity overall</h2>
                                     </div>
                                     <div class="panel-body">
-                                        <div class="table-responsive">
-                                            <table class="table table-hover">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Attribute</th>
-                                                        <th>Maximum</th>
-                                                        <th>Median</th>
-                                                        <th>Minimum</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {% for atti_name,atti_stats_all in att_stats_all.items %}
-                                                    <tr class="bg-default">
-                                                        <td>{{ atti_name }}</td>
-                                                        <td>{{atti_stats_all.max}}</td>
-                                                        <td>{{atti_stats_all.median}}</td>
-                                                        <td>{{atti_stats_all.min}}</td>
-                                                    </tr>
-                                                    {% endfor %}
-                                                </tbody>
-                                            </table>
+                                        {% for att_pid in passed_pie_att_ids %}
+                                        <div class="col-lg-6">
+                                            <div id="{{att_pid | safe}}_overall_pie"></div>
                                         </div>
-                                        <!-- /.table-responsive -->
+                                        {% endfor %}
+                                        <!--<div class="col-lg-6">-->
+                                            <!--<div id="pie_div_all1"></div>-->
+                                        <!--</div>-->
+                                        <!--<div class="col-lg-6">-->
+                                            <!--<div id="pie_div_all2"></div>-->
+                                        <!--</div>-->
                                     </div>
                                     <!-- /.panel-body -->
                                 </div><!-- /.panel -->
@@ -278,21 +320,13 @@
                                         <!-- /.table-responsive -->
                                         <!--<div id="score_scatter" style="min-width: 310px; height: 400px; margin: 0 auto"></div>-->
                                     </div>
-                                    <div class="panel-footer">
-                                        Unstable when slope of fit line in scatter plot >  {{passed_slope_threshold}} (slop threshold). Otherwise it is stable.
-                                        <!--<span class="pull-right">-->
-                                            <!--<a id="btn_show_scatter">-->
-                                                <!--<i class="fa fa-question-circle-o fa-2x" style="color:lightskyblue"></i>-->
-                                            <!--</a>-->
-                                        <!--</span>-->
-                                    </div>
                                 </div> <!-- /.panel panel-info -->
                             </div><!-- /.col-lg-12 -->
 
                             <div class="col-lg-6">
                                 <div class="panel panel-primary">
                                     <div class="panel-heading">
-                                        <h2>Fairness validation
+                                        <h2>Fairness
                                         <a id="btn_show_fairness" style="float: right">
                                             <i class="fa fa-arrow-right fa-1x" style="color:white"></i>
                                         </a>
@@ -304,10 +338,7 @@
                                             <table class="table table-hover">
                                                 <thead>
                                                     <tr>
-                                                        <th rowspan="2">{{atti_name}}</th>
-                                                        <th colspan="3" class="text-center">Oracles</th>
-                                                    </tr>
-                                                    <tr>
+                                                        <th>{{atti_name}}</th>
                                                         <th>FA*IR</th>
                                                         <th>Pairwise</th>
                                                         <th>Proportion</th>
@@ -365,12 +396,7 @@
                                         {% endfor %}
                                     </div>
                                     <div class="panel-footer">
-                                        Unfair when p-value of corresponding statistical test <= {{passed_alpha_default}} (significance threshold). Otherwise, it is fair.
-                                        <!--<span class="pull-right">-->
-                                            <!--<a id="btn_show_fairness">-->
-                                                <!--<i class="fa fa-arrow-right fa-2x" style="color:royalblue"></i>-->
-                                            <!--</a>-->
-                                        <!--</span>-->
+                                        Unfair when p-value of corresponding statistical test <= {{passed_alpha_default}}.
                                     </div>
                                 </div> <!-- /.panel panel-info -->
                             </div><!-- /.col-lg-12 -->
@@ -391,7 +417,7 @@
                         <div class="panel-heading">
                             <h2>
                                 <a id="btn_hide_correstats" style="float: left"><i class="fa fa-arrow-left fa-1x" style="color:white"></i></a>
-                                &nbsp; Ingredients of correlated attributes
+                                &nbsp; Ingredients
                             </h2>
                         </div>
                         <div class="panel-body">
@@ -454,13 +480,13 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div><!-- ./row-->
                 <div class="row" id="fairness_div" style="display: none">
                     <div class="panel panel-primary">
                         <div class="panel-heading">
                             <h2>
                                 <a id="btn_hide_fairness" style="float: left"><i class="fa fa-arrow-left fa-1x" style="color:white"></i></a>
-                                &nbsp;Fairness validation
+                                &nbsp;Fairness
                             </h2>
                         </div>
                         <div class="panel-body">
@@ -540,8 +566,69 @@
     <!-- /#page-wrapper -->
 </div>
 <!-- /#wrapper -->
-
+<!-- /pie chart data using highcharts-->
 <script type="text/javascript" language="javascript">
+    var piechart_Url = "{% url 'rankingfacts:json_piechart_data' %}";
+    var data_ids = ["topTen","overall"];
+    var piecharts_atts = {{passed_pie_atts | safe}};
+    var pit_att_ids = {{passed_pie_att_ids | safe}};
+
+     $(document).ready(function () {
+         // generate pie charts
+        $.getJSON(piechart_Url, function (data) {
+            for (ai in piecharts_atts) {
+                var cur_att = piecharts_atts[ai];
+                for (di in data_ids) {
+                    var cur_id = data_ids[di];
+                    // get the div id for pie chart
+                    var cur_div_id =  pit_att_ids[ai] + "_" +cur_id + "_pie";
+                    Highcharts.chart(cur_div_id, {
+                        chart: {
+                            plotBackgroundColor: null,
+                            plotBorderWidth: null,
+                            plotShadow: false,
+                            type: 'pie'
+                        },
+                        title: {
+                            text: cur_att
+                        },
+                        tooltip: {
+                            pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+                        },
+                        plotOptions: {
+                            pie: {
+                                allowPointSelect: true,
+                                cursor: 'pointer',
+                                dataLabels: {
+                                    enabled: false
+                                },
+                                showInLegend: true
+                            }
+                        },
+                        series: [{
+                            name: 'Universities',
+                            colorByPoint: true,
+                            data: data[cur_att][cur_id]
+                        }]
+                    });
+                }
+            }
+
+        });
+
+     });
+
+</script>
+
+<!-- /panel action -->
+<script type="text/javascript" language="javascript">
+
+    $("#btn_show_rankingstats").click(function(e){
+        document.getElementById("ranking_stats_div").style.display = 'inline';
+    });
+    $("#btn_hide_rankingstats").click(function(e){
+        document.getElementById("ranking_stats_div").style.display = 'none';
+    });
 
     $("#btn_show_correstats").click(function(e){
         document.getElementById("corre_stats_div").style.display = 'inline';
@@ -560,6 +647,7 @@
     $("#btn_hide_scatter").click(function(e){
         document.getElementById("scatter_div").style.display = 'none';
     });
+
     $("#btn_show_scatter").click(function(e){
         document.getElementById("scatter_div").style.display = 'inline';
         var chartUrl = "{% url 'rankingfacts:json_scatter_score' %}";
@@ -636,5 +724,13 @@
 
 <!-- Bootstrap Core JavaScript -->
 <script src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+<!-- Flot Charts JavaScript -->
+<script src="{% static 'flot/excanvas.min.js' %}"></script>
+<script src="{% static 'flot/jquery.flot.js' %}"></script>
+<script src="{% static 'flot/jquery.flot.pie.js' %}"></script>
+<script src="{% static 'flot/jquery.flot.resize.js' %}"></script>
+<script src="{% static 'flot/jquery.flot.time.js' %}"></script>
+<script src="{% static 'flot-tooltip/jquery.flot.tooltip.min.js' %}"></script>
+<!--<script src="{% static 'flot/flot-data_cs.js' %}"></script>-->
 
 </body>
