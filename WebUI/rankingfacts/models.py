@@ -4,9 +4,7 @@ import random
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
-from scipy.stats import mode
 from sklearn import linear_model
-from sklearn.preprocessing import StandardScaler
 from math import sqrt
 from DataSynthesizer.lib.utils import read_json_file
 from FAIR.FairnessInRankings import FairnessInRankingsTester
@@ -52,7 +50,12 @@ def getAttValueCount(input_data, att_name):
     cur_values_count = input_data[att_name].value_counts()
     new_values = []
     for i in range(len(cur_values_count)):
-        new_values.append([cur_values_count.index[i],int(cur_values_count.values[i])])
+        cur_cate = cur_values_count.index[i]
+        # if not a string, then encode it to the type that is JSON serializable
+        if not isinstance(cur_cate, str):
+            cur_cate = str(cur_cate)
+        cur_count = int(cur_values_count.values[i])
+        new_values.append([cur_cate,cur_count])
     return new_values
 
 def get_chart_data(current_file, att_names):
@@ -64,10 +67,7 @@ def get_chart_data(current_file, att_names):
             att_names: list of attribute names to compute the chart data
         Return:  json data for pie chart plot using HighChart format
         """
-    # TODO: only work for CS ranking dataset now. Generalize it to all datasets later
     data = pd.read_csv(current_file + "_weightsum.csv")
-    # attributes to generate the pie chart data in above data
-    # ["topTen", "overall"]
     pie_data = {}
     for ai in att_names:
         cur_ai_json = {}
@@ -75,6 +75,7 @@ def get_chart_data(current_file, att_names):
         cur_ai_json["overall"] = getAttValueCount(data,ai)
         pie_data[ai] = cur_ai_json
     return pie_data
+
 
 def computeSlopeOfScores(current_file,top_K, round_default=2):
     """
@@ -290,11 +291,6 @@ def computePvalueFAIR(att_name,att_value,current_file,top_K,round_default=2):
             generated_ranking.append([index,"pro"])
         else:
             generated_ranking.append([index,"unpro"])
-    # print("*******************")
-    # print(generated_ranking)
-    # print("*******************")
-    # print(fair_p_vi)
-    # print("*******************")
 
     p_value, isFair, posiFail, alpha_c, pro_needed_list = computeFairRankingProbability(top_K,fair_p_vi,generated_ranking)
     return round(p_value,round_default),round(alpha_c,round_default)
@@ -426,19 +422,9 @@ def computeFairRankingProbability(k,p,generated_ranking,default_alpha=0.05):
 
     gft = FairnessInRankingsTester(p, default_alpha, k, correctedAlpha=True)
     posAtFail, isFair = gft.ranked_group_fairness_condition(generated_ranking)
-    # print("*******************FA")
-    # print(posAtFail, isFair)
-    # print("*******************FA")
 
-    if isFair:
-        # posAtFail = "NA"
-        p_value = gft.calculate_p_value_left_tail(k, generated_ranking)
-    else:
-        # p_value = gft.calculate_p_value_left_tail(posAtFail, generated_ranking)
-        p_value = gft.calculate_p_value_left_tail(k, generated_ranking)
-    # print("*******************FA")
-    # print(p_value,gft.alpha_c)
-    # print("*******************FA")
+    p_value = gft.calculate_p_value_left_tail(k, generated_ranking)
+
     return p_value, isFair, posAtFail, gft.alpha_c, gft.candidates_needed
 
 

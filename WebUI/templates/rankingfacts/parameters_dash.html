@@ -104,10 +104,10 @@
                 </div><!-- /.col-lg-6 -->
                 <div class="col-lg-6">
                     <div class="row">
-                        <div class="col-lg-12">
+                        <div class="col-lg-6">
                             <div class="panel panel-primary">
                                 <div class="panel-heading">
-                                    <h4>Choose sensitive attributes ( only for binary attributes) </h4>
+                                    <h4>Choose sensitive attributes (binary) for fairness</h4>
                                 </div>
                                 <!-- /.panel-heading -->
                                 <div class="panel-body">
@@ -123,7 +123,27 @@
                                 <!-- /.panel-body -->
                             </div>
                             <!-- /.panel -->
-                        </div>
+                        </div> <!-- /.col-lg-6 -->
+                        <div class="col-lg-6">
+                            <div class="panel panel-warning">
+                                <div class="panel-heading">
+                                    <h4>Choose sensitive categorical attributes for diversity</h4>
+                                </div>
+                                <!-- /.panel-heading -->
+                                <div class="panel-body">
+                                    <div class="form-group" id="cate_checkboxes">
+                                        {% for atti_name,atti_id in passed_zip_cate_atts %}
+                                        <label class="checkbox-inline">
+                                            <input type='hidden' name="{{atti_id | safe}}_cate_checks" value="{{atti_name | safe}}_unchecked">
+                                            <input id="{{atti_id | safe}}_cate_checks" name="{{atti_id | safe}}_cate_checks" type="checkbox" value="{{atti_name | safe}}"> {{ atti_name }}
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <!-- /.panel-body -->
+                            </div>
+                            <!-- /.panel -->
+                        </div> <!-- /.col-lg-6 -->
                     </div><!-- /.row -->
                     <div class="row">
                         <div class="col-lg-12">
@@ -289,6 +309,8 @@
     // validation check when click ranking preview
     var num_att_ids = {{passed_num_atts_ids | safe}};
     var binary_att_ids = {{passed_binary_ids | safe}};
+    var cate_att_ids = {{passed_cate_ids | safe}};
+
     function validateInputAtt() {
         var choose_att_flag = "false";
         for (i in num_att_ids) {
@@ -309,7 +331,7 @@
             return false;
         }
 
-        // validation check when click fairness check button
+        // validation of fairness checkboxes when click ranking preview
         var choose_sensi_att_flag = "false";
         for (i in binary_att_ids) {
            var checks_sensi_id = binary_att_ids[i] + "_sensi_checks";
@@ -319,10 +341,22 @@
            }
         }
         if (choose_sensi_att_flag=="false") {
-            alert('You need to specify at least one sensitive attribute to check!');
+            alert('You need to choose at least one binary sensitive attribute to check!');
             return false;
         }
+        // validation of diversity checkboxes when click ranking preview
+        var choose_cate_att_flag = "false";
+        for (i in cate_att_ids) {
+           var checks_cate_id = cate_att_ids[i] + "_cate_checks";
 
+           if (document.getElementById(checks_cate_id).checked) {
+               choose_cate_att_flag = "true";
+           }
+        }
+        if (choose_cate_att_flag=="false") {
+            alert('You need to choose at least one categorical sensitive attribute to check!');
+            return false;
+        }
         return true;
     }//end of validation function
 </script>
@@ -331,6 +365,8 @@
     var enter_paras={{passed_atts_json | safe}};
     var choosed_atts_ids = {{passed_ranked_atts_ids |safe}};
     var checked_sensi_atts_ids = {{passed_checked_sensi_ids |safe}};
+    var checked_cate_atts_ids = {{passed_checked_cate_atts_ids |safe}};
+
     $(document).ready(function () {
         if (enter_paras){
             for (i in choosed_atts_ids) {
@@ -344,10 +380,15 @@
                 document.getElementById(choosed_atts_ids[i] + "_para").style.display = 'inline';
 
             }
-            //check the sensitive atts
+            //check the binary sensitive atts
             for (i in checked_sensi_atts_ids) {
                 var sensi_checks_id = checked_sensi_atts_ids[i]+"_sensi_checks";
                 document.getElementById(sensi_checks_id).checked = true;
+            }
+            // check the categorical sensitive atts
+            for (i in checked_cate_atts_ids) {
+                var cate_checks_id = checked_cate_atts_ids[i]+"_cate_checks";
+                document.getElementById(cate_checks_id).checked = true;
             }
             //show the generated score div
             document.getElementById("generated_score_div").style.display = 'inline';

@@ -1,12 +1,12 @@
 import json
 import pandas as pd
+import numpy as np
 from time import time
 
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from django.http import JsonResponse
 
 from synthesizer.lib.DataSynthesizerWrapper import get_histograms_of
 from synthesizer.lib.DataSynthesizerWrapper import get_categorical_attributes_csv
@@ -70,7 +70,11 @@ def data_process(request):
     passed_data_name = request.session.get('passed_data_name')
 
     atts_info = get_histograms_of(passed_data_name + ".csv")
+    # get the categorical attribuet from original uploaded dataset
     cat_atts = atts_info["cate_atts"]
+    cat_atts_ids = ["att"+str(i) for i in range(len(cat_atts))]
+    zip_cate_atts = zip(cat_atts, cat_atts_ids)
+
     att_list = atts_info["all_atts"]
     att_ids_list = ["att"+str(i) for i in range(len(att_list))]
     num_atts_names = atts_info["numeric_atts"]
@@ -122,7 +126,7 @@ def data_process(request):
             json_parameter[atti_id] = atti_json
         json_parameter["ranked_atts"] = included_atts
         json_parameter["ranked_atts_weight"] = atts_weights
-        # get checked sensitive attribute
+        # get checked binary sensitive attribute
         checked_sensi_atts = []
         checked_sensi_att_ids = []
         for vi in range(len(binary_atts)):
@@ -133,6 +137,18 @@ def data_process(request):
                 checked_sensi_atts.append(vi_name)
                 checked_sensi_att_ids.append(vi_id)
         json_parameter["checked_sensi_atts"] = checked_sensi_atts
+
+        # get checked categorical sensitive attribute
+        checked_cate_atts = []
+        checked_cate_att_ids = []
+        for vi in range(len(cat_atts)):
+            vi_name = cat_atts[vi]
+            vi_id = cat_atts_ids[vi]
+            att_cate = request.POST[vi_id + "_cate_checks"]
+            if att_cate == vi_name:
+                checked_cate_atts.append(vi_name)
+                checked_cate_att_ids.append(vi_id)
+        json_parameter["checked_cate_atts"] = checked_cate_atts
 
         # save user input parameters to server
         json_parameter_outputfn = passed_data_name + "_rankings.json"
@@ -149,15 +165,17 @@ def data_process(request):
 
         context = {'passed_data_name': passed_data_name, "passed_json_columns": json_data_table,
                    "passed_column_name": att_list, "drawable_atts": atts_info["drawable_atts"],
-                   "passed_cate_atts": atts_info["cate_atts"], "passed_atts_json": json_parameter,
+                   "passed_cate_atts": cat_atts, "passed_atts_json": json_parameter,
                    "passed_ranked_atts": included_atts, "passed_res_atts": res_ranked_cols,
                    "passed_json_ranks": json_rank_table, "passed_json_columns_header": json_header_table,
                    "passed_cols_ids": att_ids_list,"passed_json_ranks_header":json_rank_header_table,
                    "passed_ranked_atts_ids": included_atts_ids,"passed_zip_numeric":zip_num_atts,
                    "passed_num_atts_ids": num_atts_ids,"passed_num_atts_names":num_atts_names,
                    "passed_binary_zips": zip_binarys, "passed_checked_sensi_ids":checked_sensi_att_ids,
-                   "passed_checked_sensi_atts": checked_sensi_atts,
+                   "passed_checked_sensi_atts": checked_sensi_atts, "passed_zip_cate_atts":zip_cate_atts,
                    "passed_binary_names": binary_atts, "passed_binary_ids": binary_att_ids,
+                   "passed_cate_ids": cat_atts_ids, "passed_checked_cate_atts":checked_cate_atts,
+                   "passed_checked_cate_atts_ids": checked_cate_att_ids,
                    }
         request.session['running_data'] = "unprocessed"
 
@@ -166,14 +184,16 @@ def data_process(request):
         res_ranked_cols = "false"
         context = {'passed_data_name': passed_data_name, "passed_json_columns": json_data_table,
                    "passed_column_name": att_list, "drawable_atts": atts_info["drawable_atts"],
-                   "passed_cate_atts": atts_info["cate_atts"],"passed_res_atts": res_ranked_cols,
+                   "passed_cate_atts": cat_atts,"passed_res_atts": res_ranked_cols,
                    "passed_json_columns_header": json_header_table, "passed_cols_ids": att_ids_list,
                    "passed_ranked_atts": res_ranked_cols,"passed_ranked_atts_ids": res_ranked_cols,
                    "passed_zip_numeric":zip_num_atts,"passed_atts_json": res_ranked_cols,
                    "passed_num_atts_ids": num_atts_ids,"passed_num_atts_names":num_atts_names,
                    "passed_binary_zips": zip_binarys,"passed_checked_sensi_ids":res_ranked_cols,
-                   "passed_checked_sensi_atts": res_ranked_cols,
+                   "passed_checked_sensi_atts": res_ranked_cols,"passed_zip_cate_atts":zip_cate_atts,
                    "passed_binary_names": binary_atts, "passed_binary_ids": binary_att_ids,
+                   "passed_cate_ids":cat_atts_ids,"passed_checked_cate_atts":res_ranked_cols,
+                   "passed_checked_cate_atts_ids": res_ranked_cols,
                    }
 
         request.session['running_data'] = "unprocessed"
@@ -216,7 +236,12 @@ def norm_process(request):
     norm_data.to_csv(norm_data_name+".csv", index=False)
 
     atts_info = get_histograms_of(norm_data_name + ".csv")
-    # cat_atts = atts_info["cate_atts"]
+
+    # get the categorical attribuet from original uploaded dataset
+    cat_atts = atts_info["cate_atts"]
+    cat_atts_ids = ["att" + str(i) for i in range(len(cat_atts))]
+    zip_cate_atts = zip(cat_atts, cat_atts_ids)
+
     att_list = atts_info["all_atts"]
     att_ids_list = ["att" + str(i) for i in range(len(att_list))]
     num_atts_names = atts_info["numeric_atts"]
@@ -269,7 +294,7 @@ def norm_process(request):
         json_parameter["ranked_atts"] = included_atts
         json_parameter["ranked_atts_weight"] = atts_weights
 
-        # get checked sensitive attribute
+        # get checked binary sensitive attribute
         checked_sensi_atts = []
         checked_sensi_att_ids = []
         for vi in range(len(binary_atts)):
@@ -281,6 +306,17 @@ def norm_process(request):
                 checked_sensi_att_ids.append(vi_id)
         json_parameter["checked_sensi_atts"] = checked_sensi_atts
 
+        # get checked categorical sensitive attribute
+        checked_cate_atts = []
+        checked_cate_att_ids = []
+        for vi in range(len(cat_atts)):
+            vi_name = cat_atts[vi]
+            vi_id = cat_atts_ids[vi]
+            att_cate = request.POST[vi_id + "_cate_checks"]
+            if att_cate == vi_name:
+                checked_cate_atts.append(vi_name)
+                checked_cate_att_ids.append(vi_id)
+        json_parameter["checked_cate_atts"] = checked_cate_atts
 
         # save user input parameters to server
         json_parameter_outputfn = norm_data_name + "_rankings.json"
@@ -297,15 +333,17 @@ def norm_process(request):
 
         context = {'passed_data_name': passed_data_name, "passed_json_columns": json_data_table,
                    "passed_column_name": att_list, "drawable_atts": atts_info["drawable_atts"],
-                   "passed_cate_atts": atts_info["cate_atts"], "passed_atts_json": json_parameter,
+                   "passed_cate_atts": cat_atts, "passed_atts_json": json_parameter,
                    "passed_ranked_atts": included_atts, "passed_res_atts": res_ranked_cols,
                    "passed_json_ranks": json_rank_table, "passed_json_columns_header": json_header_table,
                    "passed_cols_ids": att_ids_list, "passed_json_ranks_header": json_rank_header_table,
                    "passed_ranked_atts_ids": included_atts_ids, "passed_zip_numeric": zip_num_atts,
                    "passed_num_atts_ids": num_atts_ids, "passed_num_atts_names": num_atts_names,
                    "passed_binary_zips": zip_binarys,"passed_checked_sensi_ids":checked_sensi_att_ids,
-                   "passed_checked_sensi_atts": checked_sensi_atts,
+                   "passed_checked_sensi_atts": checked_sensi_atts,"passed_zip_cate_atts":zip_cate_atts,
                    "passed_binary_names": binary_atts, "passed_binary_ids": binary_att_ids,
+                   "passed_cate_ids": cat_atts_ids, "passed_checked_cate_atts":checked_cate_atts,
+                   "passed_checked_cate_atts_ids": checked_cate_att_ids,
                    }
         request.session['running_data'] = "processed"
         return render(request, 'rankingfacts/parameters_norm_dash.html', context)
@@ -313,14 +351,16 @@ def norm_process(request):
         res_ranked_cols = "false"
         context = {'passed_data_name': passed_data_name, "passed_json_columns": json_data_table,
                    "passed_column_name": att_list, "drawable_atts": atts_info["drawable_atts"],
-                   "passed_cate_atts": atts_info["cate_atts"], "passed_res_atts": res_ranked_cols,
+                   "passed_cate_atts": cat_atts, "passed_res_atts": res_ranked_cols,
                    "passed_json_columns_header": json_header_table, "passed_cols_ids": att_ids_list,
                    "passed_ranked_atts": res_ranked_cols, "passed_ranked_atts_ids": res_ranked_cols,
                    "passed_zip_numeric": zip_num_atts, "passed_atts_json": res_ranked_cols,
                    "passed_num_atts_ids": num_atts_ids, "passed_num_atts_names": num_atts_names,
                    "passed_binary_zips": zip_binarys,"passed_checked_sensi_ids":res_ranked_cols,
-                   "passed_checked_sensi_atts": res_ranked_cols,
+                   "passed_checked_sensi_atts": res_ranked_cols,"passed_zip_cate_atts":zip_cate_atts,
                    "passed_binary_names": binary_atts, "passed_binary_ids": binary_att_ids,
+                   "passed_cate_ids":cat_atts_ids,"passed_checked_cate_atts":res_ranked_cols,
+                   "passed_checked_cate_atts_ids": res_ranked_cols,
                    }
 
         request.session['running_data'] = "processed"
@@ -356,6 +396,7 @@ def norm_json_generate_ranking(request):
 def nutrition_facts(request):
     passed_data_name = request.session.get('passed_data_name')
     passed_running_data_flag = request.session.get("running_data")
+    # for previous step, return to corresponding parameter setting page
     unprocessed_flag = True
 
     if passed_running_data_flag == "processed":
@@ -365,32 +406,30 @@ def nutrition_facts(request):
     else:
         ranks_file = passed_data_name + "_rankings.json"
         cur_data_name = passed_data_name
-
+    # read the parameter file in server that stores all the parameter inputs from user
     rankings_paras = read_json_file(ranks_file)
     chosed_atts = rankings_paras["ranked_atts"]
     checked_sensi_atts = rankings_paras["checked_sensi_atts"]
+    checked_cate_atts = rankings_paras["checked_cate_atts"]
 
-    # get all the names of att to create att ids, used to avoid long attribute name with space
-    # att_names = list(rankings_paras.keys())
-    # att_names = att_names[:len(att_names)-2]
-    chosed_att_ids_list = ["att" + str(i) for i in range(len(chosed_atts))]
-    chosed_atts_zip = zip(chosed_atts, chosed_att_ids_list)
+    # get the choosed atts and its weight in the parameter file
     att_weights = {}
     for i in range(len(chosed_atts)):
         att_weights[chosed_atts[i]] = rankings_paras["ranked_atts_weight"][i]
 
-    chosed_atts_tuple = [(chosed_atts[i],chosed_att_ids_list[i]) for i in range(len(chosed_atts))]
 
     # get size of upload data
     total_n = getSizeOfRanking(cur_data_name)
+
     # compute statistics of top 10 and overall in generated ranking
     att_stats_topTen = compute_statistic_topN(chosed_atts,cur_data_name,10)
     att_stats_all = compute_statistic_topN(chosed_atts,cur_data_name,total_n)
     # compute top 3 correlated attributes
     att_correlated = compute_correlation(cur_data_name)
-
+    # set the correlation threshold
     low_coef_threshold = 0.25
     high_coef_threshold = 0.75
+    # generate the json data for correlation table
     top3_correlated_attts = {}
     for ai in att_correlated:
         ai_coef = abs(ai[0])
@@ -403,7 +442,7 @@ def nutrition_facts(request):
             else:
                 top3_correlated_attts[ai_name] = [ai_coef, "median"]
 
-    # compute statistics of most 3 correlated attributes
+    # compute statistics of top 3 correlated attributes for detailed ingredients widget
     top_corre_atts = [att_correlated[i][1] for i in range(len(att_correlated))]
     corre_att_stats_topTen = compute_statistic_topN(top_corre_atts, cur_data_name, 10)
     corre_att_stats_all = compute_statistic_topN(top_corre_atts, cur_data_name, total_n)
@@ -412,13 +451,13 @@ def nutrition_facts(request):
     # compute the slope of generated scores at a specified top-k
     # set the slope threshold for stability
     slope_threshold = 0.25
-    stable_res = {}
     if total_n >= 100:
         slope_top_ten = computeSlopeOfScores(cur_data_name,10)
         slope_top_hundred = computeSlopeOfScores(cur_data_name, 100)
         stable_ten = abs(slope_top_ten) <= slope_threshold
         stable_hundred = abs(slope_top_hundred) <= slope_threshold
         stable_res = {"Top-10": stable_ten, "Top-100": stable_hundred}
+        slope_overall = "false"
     else:
         if total_n >=10:
             slope_top_ten = computeSlopeOfScores(cur_data_name, 10)
@@ -430,27 +469,31 @@ def nutrition_facts(request):
         else:
             slope_top_ten = "NA"
             slope_top_hundred = "NA"
+            slope_overall = "false"
             stable_res = {}
 
     # run the fairness validation for three oracles
     fair_all_oracles, fair_res_oracles, alpha_default, top_K = runFairOracles(checked_sensi_atts,cur_data_name)
 
-    # set the attribuets for the pie plot data for CS ranking, TODO: update it to let user choose. now only work for cs ranking
-    pie_atts = ["Regional Code","DeptSizeBin"]
-    pie_att_ids = ["att"+str(i) for i in range(len(pie_atts))]
-    context = {'passed_data_name': passed_data_name, "chosed_atts": chosed_atts,
-               "att_weights": att_weights, "att_stats_topTen": att_stats_topTen,
-               "att_stats_all": att_stats_all, "passed_choosed_att_zip": chosed_atts_zip,
-               "passed_cols_ids": chosed_att_ids_list, "att_correlated": top3_correlated_attts,
+    checked_cate_att_ids = ["att"+str(i) for i in range(len(checked_cate_atts))]
+    # compute the number of pir charts
+    pie_n = len(checked_cate_att_ids)
+    row_n = int(np.ceil(pie_n/2))
+    place_n = int(5 + (row_n-1)*2)
+    split_n = int(row_n * 2 +1)
+
+    context = {'passed_data_name': passed_data_name, "passed_att_weights": att_weights,
+               "passed_att_stats_topTen": att_stats_topTen, "passed_att_stats_all": att_stats_all,
+               "passed_att_correlated": top3_correlated_attts, "passed_unprocessing_flag": unprocessed_flag,
                "corre_att_stats_topTen": corre_att_stats_topTen, "corre_att_stats_all": corre_att_stats_all,
-               "chosed_atts_tuple": chosed_atts_tuple, "passed_unprocessing_flag": unprocessed_flag,
                "passed_fair_all_oracles": fair_all_oracles,"passed_fair_res_oracles":fair_res_oracles,
                "passed_slope_ten":slope_top_ten, "passed_slope_hundred":slope_top_hundred,
                "passed_stable_res":stable_res, "passed_slope_threshold":slope_threshold,
                "passed_alpha_default":alpha_default, "passed_coef_high":high_coef_threshold,
                "passed_top_k":top_K, "passed_coef_low": low_coef_threshold,
-               "passed_slope_overall": slope_overall, "passed_pie_att_ids": pie_att_ids,
-               "passed_pie_atts": pie_atts
+               "passed_slope_overall": slope_overall, "passed_pie_att_ids": checked_cate_att_ids,
+               "passed_pie_atts": checked_cate_atts, "passed_range_place": range(place_n),
+               "passed_range_split": range(split_n),
                }
     return render(request, 'rankingfacts/ranking_facts_widget.html', context)
 
@@ -468,16 +511,17 @@ def json_scatter_score(request):
 def json_piechart_data(request):
     passed_data_name = request.session.get('passed_data_name')
     passed_running_data_flag = request.session.get("running_data")
+
     if passed_running_data_flag == "processed":
         cur_data_name = passed_data_name + "_norm"
+        ranks_file = passed_data_name + "_norm_rankings.json"
     else:
         cur_data_name = passed_data_name
+        ranks_file = passed_data_name + "_rankings.json"
 
-    # set the attribuets for the pie plot data for CS ranking,
-    # TODO: read this from server parameter file to let user choose. now only work for cs ranking
-    atts_name = ["Regional Code", "DeptSizeBin"]
-
-    # TODO: only work for CS ranking dataset now. Generalize it to all datasets later
-    piechart_json_data = get_chart_data(cur_data_name,atts_name)
+    # read the parameter file in server that stores all the parameter inputs from user
+    rankings_paras = read_json_file(ranks_file)
+    checked_cate_atts = rankings_paras["checked_cate_atts"]
+    piechart_json_data = get_chart_data(cur_data_name,checked_cate_atts)
 
     return HttpResponse(json.dumps(piechart_json_data), content_type='application/json')
