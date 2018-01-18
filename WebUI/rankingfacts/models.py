@@ -38,25 +38,53 @@ def get_score_scatter(current_file,top_K=100):
         scatter_points.append([position_value[i], score_value[i]])
     return scatter_points
 
-def getAttValueCount(input_data, att_name):
+def getAttValueCountTopAndOverall(input_data, att_name, top_K=10):
     """
-            Subfunction to count values of input attribute in the data for pie chart.
+            Subfunction to count values of input attribute in the data for top 10 and overall pie chart.
 
             Attributes:
                 input_data: dataframe that store the input data
                 att_name: name of attribuet to count
-            Return:  two-dimension array for value and its count
+                top_K: top k position to count the value, default value is 10
+            Return:  json data includes two two-dimension arrays for value and its count at top 10 and overall
             """
-    cur_values_count = input_data[att_name].value_counts()
-    new_values = []
-    for i in range(len(cur_values_count)):
-        cur_cate = cur_values_count.index[i]
+    counts_all = {}
+    all_values_count = input_data[att_name].value_counts()
+    top_data = input_data[0:top_K]
+    # get overall counts
+    new_values_all = []
+    for i in range(len(all_values_count)):
+        cur_cate = all_values_count.index[i]
         # if not a string, then encode it to the type that is JSON serializable
         if not isinstance(cur_cate, str):
             cur_cate = str(cur_cate)
-        cur_count = int(cur_values_count.values[i])
-        new_values.append([cur_cate,cur_count])
-    return new_values
+        cur_count = int(all_values_count.values[i])
+        new_values_all.append([cur_cate,cur_count])
+    counts_all["overall"] = new_values_all
+
+    # get top K counts and make sure list of counts include every value of input attribute for consistent pie chart colors
+    top_values_count = top_data[att_name].value_counts()
+    top_cates = top_values_count.index
+    # generate a dict to store the top k value counts
+    top_values_count_dic = {}
+    for i in range(len(top_values_count)):
+        top_values_count_dic[top_values_count.index[i]] = int(top_values_count.values[i])
+    # generate a new value list for top K using same order as in over all list
+    new_values_top = []
+    for i in range(len(all_values_count)):
+        cur_cate = all_values_count.index[i]
+        # if not a string, then encode it to the type that is JSON serializable
+        if not isinstance(cur_cate, str):
+            str_cur_cate = str(cur_cate)
+        else:
+            str_cur_cate = cur_cate
+        if cur_cate in top_cates: # exiting in top K
+            new_values_top.append([str_cur_cate, top_values_count_dic[cur_cate]])
+        else:
+            new_values_top.append([str_cur_cate, 0])
+    counts_all["topTen"] = new_values_top
+    return counts_all
+
 
 def get_chart_data(current_file, att_names):
     """
@@ -71,8 +99,9 @@ def get_chart_data(current_file, att_names):
     pie_data = {}
     for ai in att_names:
         cur_ai_json = {}
-        cur_ai_json["topTen"] = getAttValueCount(data[0:10],ai)
-        cur_ai_json["overall"] = getAttValueCount(data,ai)
+        counts_all = getAttValueCountTopAndOverall(data,ai)
+        cur_ai_json["topTen"] = counts_all["topTen"]
+        cur_ai_json["overall"] = counts_all["overall"]
         pie_data[ai] = cur_ai_json
     return pie_data
 
@@ -251,12 +280,18 @@ def runFairOracles(chosed_atts,current_file,alpha_default=0.05,k_threshold=200,k
             p_value_proportion = computePvalueProportion(si,vi,current_file,top_K)
             res_proportion = p_value_proportion > alpha_default
 
-            filled_vi = vi.replace(" ", "")
+            if not isinstance(vi, str):
+                filled_vi = vi
+            else:
+                filled_vi = vi.replace(" ", "")
 
             si_value_json[filled_vi] = [p_value_fair,alphac_fair,p_value_pairwise,alpha_default,p_value_proportion,alpha_default]
             si_fair_json[filled_vi] = [res_fair,res_pairwise,res_proportion]
 
-        filled_si = si.replace(" ","")
+        if not isinstance(si, str):
+            filled_si = si
+        else:
+            filled_si = si.replace(" ", "")
         fair_res_data[filled_si] = si_value_json
         fair_statement_data[filled_si] = si_fair_json
     return fair_res_data, fair_statement_data, alpha_default, top_K
