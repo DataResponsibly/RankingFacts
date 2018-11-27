@@ -76,8 +76,6 @@
         <footer class="main_footer">
             <p class="text-muted">
                 &copy; 2017 <a href="https://dataresponsibly.github.io">Data Responsibly</a>
-                | <a href="https://github.com/DataResponsibly/RankingFacts">Codes</a>
-                | <a href="https://dataresponsibly.github.io/contact/">Contact Us</a>
             </p>
         </footer>
     </div>
@@ -93,7 +91,7 @@
         justify-content: center;
     }
 </style>
-<!-- toolip setting-->
+<!-- play data toolip setting-->
 <script type="text/javascript" language="javascript">
 $(document).ready(function(){
     $('[data-toggle="tooltip"]').tooltip({
@@ -102,12 +100,15 @@ $(document).ready(function(){
 });
 </script>
 <!-- if upload data size less than threshold, then alert user to upload new data or leave it blank use test data-->
-<script type="text/javascript" language="javascript">
+<script type="text/javascript" language="JavaScript">
     // validate upload data size
     var data_size_flag = {{passed_size_flag | safe}};
     if (data_size_flag == false){
         alert("You need to upload a data set that has more than 20 rows! Or leave it blank to use our test data!");
     }
+</script>
+<!-- if upload data is not .csv file, then alert user to upload new data or leave it blank to use test data-->
+<script type="text/javascript" language="javascript">
     // for browser that does not support .csv accept
     var regex = new RegExp("(.*?)\.(csv)$");
 

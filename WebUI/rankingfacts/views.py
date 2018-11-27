@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from time import time
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
@@ -28,41 +28,51 @@ from .models import get_chart_data
 from DataSynthesizer.lib.utils import read_json_file
 
 
-# view functions to handle index page
+# view functions to handle the landing page
 def base(request):
-    play_data_list = ["GermanCredit_age25","ProPublica_gender","CSranking_faculty30"]
-    context = {"passed_play_data": play_data_list}
+    # assign each user a specific Id using the time stamp
+    cur_time_stamp = str(int(time()*1e7))
+    cur_user_id = "U"+cur_time_stamp
+    # context = {"passed_user_id": cur_user_id}
+    request.session['passed_user_id'] = cur_user_id
+    return render(request, "rankingfacts/webpage.html")
+
+def upload_data(request):
+    cur_user_id = request.session.get('passed_user_id')
     # NOTICE: no .csv suffix in current passed file name
-    server_data_names_map = {"GermanCredit_age25": "GC", "ProPublica_gender": "PP", "CSranking_faculty30": "CS"}
-    # create a time stamp for current uploading
-    data_server_path = "./media/"
-    play_data_server_path = "./playdata/"
-    cur_time_stamp = str(time())
-    upload_data_size_threshold = 20
+    # data_server_path = "./media/"
+    data_server_path = "/home/ec2-user/dataResponsiblyUI/media/"
+
     if request.POST:
         if request.FILES:
             # get user upload file
             upload_csvfile = request.FILES['user_upload_data']
-            current_data_name = data_server_path + cur_time_stamp
+            current_data_name = data_server_path + cur_user_id
             save_uploaded_file(upload_csvfile, current_data_name)
-            # get the size of uploaded data
-            upload_data_size = getSizeOfDataset(current_data_name)
-            context_size = {"passed_play_data": play_data_list, "passed_size_flag":"false"}
-            # if upload data size less than the threshold, back to upload page and alert user
-            if upload_data_size <= upload_data_size_threshold:
-                return render(request, "base.html", context_size)
-
             request.session['passed_data_name'] = current_data_name
-        else:
-            selected_data = request.POST["dataset_select"]
-            # create a copy of current play data set on server to allow differentiate multiple users at the same time
-            cur_data = pd.read_csv(play_data_server_path + selected_data + ".csv")
-            new_stamped_name = data_server_path + server_data_names_map[selected_data] + cur_time_stamp
-            cur_data.to_csv(new_stamped_name + ".csv", index=False)
-            request.session['passed_data_name'] = new_stamped_name
         return HttpResponseRedirect(reverse('rankingfacts:data_process'))
     else:
-        return render(request, "base.html", context)
+        return render(request, "rankingfacts/upload_data_boot.html")
+
+def sample_data(request):
+    cur_user_id = request.session.get('passed_user_id')
+    # NOTICE: no .csv suffix in current passed file name
+    server_data_names_map = {"GermanCredit_age25": "GC", "ProPublica_gender": "PP", "CSranking_faculty30": "CS"}
+    # create a time stamp for current uploading
+    # data_server_path = "./media/"
+    # play_data_server_path = "./playdata/rankingfacts/"
+    data_server_path = "/home/ec2-user/dataResponsiblyUI/media/"
+    play_data_server_path = "/home/ec2-user/dataResponsiblyUI/playdata/rankingfacts/"
+    if request.POST:
+        selected_data = request.POST["dataset_select"]
+        # create a copy of current play data set on server to allow differentiate multiple users at the same time
+        cur_data = pd.read_csv(play_data_server_path + selected_data + ".csv")
+        new_stamped_name = data_server_path + server_data_names_map[selected_data] + cur_user_id
+        cur_data.to_csv(new_stamped_name + ".csv", index=False)
+        request.session['passed_data_name'] = new_stamped_name
+        return HttpResponseRedirect(reverse('rankingfacts:data_process'))
+    else:
+        return render(request, "rankingfacts/sample_data_boot.html")
 
 # view functions to handle unprocessing parameters setings part
 def data_process(request):
@@ -86,6 +96,27 @@ def data_process(request):
     binary_att_ids = ["binary_att" + str(i) for i in range(len(binary_atts))]
     zip_binarys = zip(binary_atts, binary_att_ids)
 
+    row_binary_atts = []
+    for bai in range(len(binary_att_ids)):
+        if bai % 3 ==0:
+            row_binary_atts.append("endrow")
+        else:
+            row_binary_atts.append("row")
+    row_cat_atts = []
+    for cai in range(len(cat_atts_ids)):
+        if cai % 3 ==0:
+            row_cat_atts.append("endrow")
+        else:
+            row_cat_atts.append("row")
+    row_num_atts = []
+    for ai in range(len(num_atts_ids)):
+        if ai % 3 == 0:
+            row_num_atts.append("endrow")
+        else:
+            row_num_atts.append("row")
+    num_binary_att = zip(binary_atts, binary_att_ids, row_binary_atts)
+    num_cat_att = zip(cat_atts, cat_atts_ids, row_cat_atts)
+    num_all_att = zip(num_atts_names, num_atts_ids, row_num_atts)
     # initialize json data and header for dataTables
     json_data_table = []
     json_header_table = []
@@ -175,11 +206,12 @@ def data_process(request):
                    "passed_checked_sensi_atts": checked_sensi_atts, "passed_zip_cate_atts":zip_cate_atts,
                    "passed_binary_names": binary_atts, "passed_binary_ids": binary_att_ids,
                    "passed_cate_ids": cat_atts_ids, "passed_checked_cate_atts":checked_cate_atts,
-                   "passed_checked_cate_atts_ids": checked_cate_att_ids,
+                   "passed_checked_cate_atts_ids": checked_cate_att_ids, "num_binary_att":num_binary_att,
+                   "num_cat_att":num_cat_att, "num_all_att": num_all_att
                    }
         request.session['running_data'] = "unprocessed"
 
-        return render(request, 'rankingfacts/parameters_dash.html', context)
+        return render(request, 'rankingfacts/parameters_dash_boot.html', context)
     else: # first access this link without post parameters
         res_ranked_cols = "false"
         context = {'passed_data_name': passed_data_name, "passed_json_columns": json_data_table,
@@ -193,11 +225,12 @@ def data_process(request):
                    "passed_checked_sensi_atts": res_ranked_cols,"passed_zip_cate_atts":zip_cate_atts,
                    "passed_binary_names": binary_atts, "passed_binary_ids": binary_att_ids,
                    "passed_cate_ids":cat_atts_ids,"passed_checked_cate_atts":res_ranked_cols,
-                   "passed_checked_cate_atts_ids": res_ranked_cols,
+                   "passed_checked_cate_atts_ids": res_ranked_cols, "num_binary_att":num_binary_att,
+                   "num_cat_att":num_cat_att, "num_all_att": num_all_att
                    }
 
         request.session['running_data'] = "unprocessed"
-        return render(request, 'rankingfacts/parameters_dash.html', context)
+        return render(request, 'rankingfacts/parameters_dash_boot.html', context)
 
 def json_processing_data(request):
     passed_data_name = request.session.get('passed_data_name')
@@ -252,6 +285,28 @@ def norm_process(request):
     binary_atts = get_binary_attributes_csv(passed_data_name + ".csv")
     binary_att_ids = ["binary_att" + str(i) for i in range(len(binary_atts))]
     zip_binarys = zip(binary_atts, binary_att_ids)
+
+    row_binary_atts = []
+    for bai in range(len(binary_att_ids)):
+        if bai % 3 == 0:
+            row_binary_atts.append("endrow")
+        else:
+            row_binary_atts.append("row")
+    row_cat_atts = []
+    for cai in range(len(cat_atts_ids)):
+        if cai % 3 == 0:
+            row_cat_atts.append("endrow")
+        else:
+            row_cat_atts.append("row")
+    row_num_atts = []
+    for ai in range(len(num_atts_ids)):
+        if ai % 3 == 0:
+            row_num_atts.append("endrow")
+        else:
+            row_num_atts.append("row")
+    num_binary_att = zip(binary_atts, binary_att_ids, row_binary_atts)
+    num_cat_att = zip(cat_atts, cat_atts_ids, row_cat_atts)
+    num_all_att = zip(num_atts_names, num_atts_ids, row_num_atts)
 
     # initialize json data and header for dataTables
     json_data_table = []
@@ -343,10 +398,11 @@ def norm_process(request):
                    "passed_checked_sensi_atts": checked_sensi_atts,"passed_zip_cate_atts":zip_cate_atts,
                    "passed_binary_names": binary_atts, "passed_binary_ids": binary_att_ids,
                    "passed_cate_ids": cat_atts_ids, "passed_checked_cate_atts":checked_cate_atts,
-                   "passed_checked_cate_atts_ids": checked_cate_att_ids,
+                   "passed_checked_cate_atts_ids": checked_cate_att_ids,"num_binary_att":num_binary_att,
+                   "num_cat_att":num_cat_att, "num_all_att": num_all_att
                    }
         request.session['running_data'] = "processed"
-        return render(request, 'rankingfacts/parameters_norm_dash.html', context)
+        return render(request, 'rankingfacts/parameters_norm_dash_boot.html', context)
     else:
         res_ranked_cols = "false"
         context = {'passed_data_name': passed_data_name, "passed_json_columns": json_data_table,
@@ -360,11 +416,12 @@ def norm_process(request):
                    "passed_checked_sensi_atts": res_ranked_cols,"passed_zip_cate_atts":zip_cate_atts,
                    "passed_binary_names": binary_atts, "passed_binary_ids": binary_att_ids,
                    "passed_cate_ids":cat_atts_ids,"passed_checked_cate_atts":res_ranked_cols,
-                   "passed_checked_cate_atts_ids": res_ranked_cols,
+                   "passed_checked_cate_atts_ids": res_ranked_cols,"num_binary_att":num_binary_att,
+                   "num_cat_att":num_cat_att, "num_all_att": num_all_att
                    }
 
         request.session['running_data'] = "processed"
-    return render(request, 'rankingfacts/parameters_norm_dash.html', context)
+    return render(request, 'rankingfacts/parameters_norm_dash_boot.html', context)
 
 def norm_json_processing_data(request):
     # NOTICE: input name need to update to _norm version for processing data
@@ -495,7 +552,7 @@ def nutrition_facts(request):
                "passed_pie_atts": checked_cate_atts, "passed_range_place": range(place_n),
                "passed_range_split": range(split_n),
                }
-    return render(request, 'rankingfacts/ranking_facts_widget.html', context)
+    return render(request, 'rankingfacts/ranking_facts_widget_boot.html', context)
 
 def json_scatter_score(request):
     passed_data_name = request.session.get('passed_data_name')

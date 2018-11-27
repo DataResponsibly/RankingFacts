@@ -5,6 +5,9 @@ from . import views
 app_name = 'rankingfacts'
 urlpatterns = [
     url(r'^$', views.base, name='base'),
+    # urls for upload data and sample data
+    url(r'^upload_data/$', views.upload_data, name='upload_data'),
+    url(r'^sample_data/$', views.sample_data, name='sample_data'),
     # urls for parameters setting at without processing mode
     url(r'^data_process/$', views.data_process, name='data_process'),
     url(r'^json_processing_data/$', views.json_processing_data, name='json_processing_data'),

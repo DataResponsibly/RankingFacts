@@ -270,15 +270,36 @@ def runFairOracles(chosed_atts,current_file,alpha_default=0.05,k_threshold=200,k
         for vi in values_si_att:
             # run FAIR oracle to compute its p-value and alpha_c
             p_value_fair,alphac_fair = computePvalueFAIR(si,vi,current_file,top_K)
-            res_fair= p_value_fair > alphac_fair
+            # res_fair= p_value_fair > alphac_fair
+
+            # for extreme case, i.e. very few protected group
+            if alphac_fair == 0:
+                res_fair = "NA"
+            else:
+                if p_value_fair > alphac_fair:
+                    res_fair = "fair"
+                else:
+                    res_fair = "unfair"
 
             # run Pairwise orace to compute its p-value, alpha use the default value
             p_value_pairwise = computePvaluePairwise(si,vi,current_file)
-            res_pairwise = p_value_pairwise > alpha_default
+            # res_pairwise = p_value_pairwise > alpha_default
+            # for extreme case, i.e. very few protected group
+            if p_value_pairwise == 0:
+                res_pairwise = "NA"
+            else:
+                if p_value_pairwise > alpha_default:
+                    res_pairwise = "fair"
+                else:
+                    res_pairwise = "unfair"
 
             # run Proportion oracle to compute its p-value, alpha use the default value
             p_value_proportion = computePvalueProportion(si,vi,current_file,top_K)
-            res_proportion = p_value_proportion > alpha_default
+            # res_proportion = p_value_proportion > alpha_default
+            if p_value_proportion > alpha_default:
+                res_proportion = "fair"
+            else:
+                res_proportion = "unfair"
 
             if not isinstance(vi, str):
                 filled_vi = vi
@@ -330,7 +351,59 @@ def computePvalueFAIR(att_name,att_value,current_file,top_K,round_default=2):
     p_value, isFair, posiFail, alpha_c, pro_needed_list = computeFairRankingProbability(top_K,fair_p_vi,generated_ranking)
     return round(p_value,round_default),round(alpha_c,round_default)
 
-def computePvaluePairwise(att_name,att_value,current_file, run_time=100, round_default=2):
+def computePvaluePairwise(att_name,att_value,current_file, round_default=2):
+    """
+    Compute p-value using Pairwise oracle
+
+    Attributes:
+        att_name: sensitive attribute name
+        att_value: value of protected group of above attribute
+        current_file: file name that stored the data (with out ".csv" suffix)
+        run_time: running times of simulation using mergeUnfairRanking
+        round_default: threshold of round function for the returned p-value
+    Return:  rounded p-value
+    """
+    data = pd.read_csv(current_file + "_weightsum.csv")
+    total_N = len(data)
+
+    # for attribute value, compute the current pairs and estimated fair pairs
+    position_lists_val = data[data[att_name] == att_value].index + 1
+    size_vi = len(position_lists_val)
+
+    fair_p_vi = size_vi / total_N
+
+    # get the pre-computed pairwise results from simulation
+    simu_data = read_json_file("/home/ec2-user/dataResponsiblyUI/playdata/rankingfacts/SimulationPairs_N"+str(total_N)+"_R1000.json")
+    # simu_data = read_json_file("./playdata/rankingfacts/SimulationPairs_N" + str(total_N) + "_R1000.json")
+
+    all_fair_p = list(simu_data.keys())
+    if str(fair_p_vi) in all_fair_p:
+        cur_pi = str(fair_p_vi)
+    else:
+        diff_p = []
+        for pi in all_fair_p:
+            num_pi = float(pi)
+            diff_p.append(abs(num_pi - fair_p_vi))
+
+        min_diff_index = diff_p.index(min(diff_p))
+        cur_pi = all_fair_p[min_diff_index]
+    # compute the number of pairs of value > * in the input ranking that is stored in the current file
+    pair_N_vi, estimated_fair_pair_vi, size_vi = computePairN(att_name,att_value,current_file)
+
+    # compute the cdf, i.e. p-value of input pair value
+    sample_pairs = simu_data[cur_pi]
+
+    cdf_pair = Cdf(sample_pairs,pair_N_vi)
+    # decide to use left tail or right tail
+    # mode_pair_sim,_ = mode(sample_pairs)
+    # median_mode = np.median(list(mode_pair_sim))
+    # if pair_N_vi <= mode_pair_sim:
+    #     p_value = cdf_pair
+    # else:
+    #     p_value = 1- cdf_pair
+    return round(cdf_pair,round_default)
+
+def computePvaluePairwise_simu(att_name,att_value,current_file, run_time=100, round_default=2):
     """
     Compute p-value using Pairwise oracle
 
@@ -355,7 +428,8 @@ def computePvaluePairwise(att_name,att_value,current_file, run_time=100, round_d
     seed_f_index = [x for x in range(size_vi)]  # list of IDs
 
     # for simulation outputs
-    data_file = "./media/FairRankingGeneration"
+    data_file = "/home/ec2-user/dataResponsiblyUI/media/FairRankingGeneration"
+    # data_file = "./media/FairRankingGeneration"
     plot_df = pd.DataFrame(columns=["RunCount", "N", "sensi_n", "fair_mp", "pair_n"])
     # run simulations, in each simulation, generate a fair ranking with input N and size of sensitive group
     for ri in range(run_time):
