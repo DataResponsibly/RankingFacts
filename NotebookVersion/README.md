@@ -1,6 +1,35 @@
 # Notebook of RankingFacts
 This is a notebook version of tool "Ranking Facts". Web-based application can be found in here: http://demo.dataresponsibly.com/rankingfacts/.
 
+
+### Assumptions for Input Dataset
+
+1. The input dataset is a table that is stored in .CSV file.
+2. We have four real datasets as examples. [dataset README](NotebookVersion/dataset/README.md)
+
+### Install RankingFacts
+
+Step 1 Download RankingFacts.
+
+Step 2 Unzip the downloaded source file and initiate the python environment. We require python version >= 3.6 and < 3.8. Replace "python" to your python version. For example, replace "python" with "python3" and "pip" with "pip3" if your python is called by "python3". 
+
+```bash
+cd CAIFRank  # go to the RankingFacts repository that is just downloaded
+python -m venv RankingFacts
+source RankingFacts/bin/activate  # activate the environment for RankingFacts
+pip install -r requirements.txt
+```
+
+### Run RankingFacts
+```bash
+jupyter notebook
+```
+
+And open this [notebook](NotebookVersion/Nutrition Labels For Rankings.ipynb).
+
+
+
+
 Copyright <2018> <dataresponsibly.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
