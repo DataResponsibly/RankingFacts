@@ -25,7 +25,7 @@ pip install -r requirements.txt
 jupyter notebook
 ```
 
-And open this [notebook](https://github.com/DataResponsibly/RankingFacts/blob/master/NotebookVersion/Nutrition_Labels_For_Rankings.ipynb).
+And open the notebook "Nutrition_Labels_For_Rankings.ipynb" inside the NotebookVersion folder.
 
 
 
