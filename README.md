@@ -1,6 +1,10 @@
 # RankingFacts
-This is the repository of source codes for RankingFacts demo.
-Demo can be found in here: http://demo.dataresponsibly.com/rankingfacts/.
+This is the repository of the open source project RankingFacts.
+
+- Web demo can be found in here: http://demo.dataresponsibly.com/rankingfacts/.
+- Check the local [notebook version](NotebookVersion/).
+
+
 
 Copyright <2018> <dataresponsibly.com>
 

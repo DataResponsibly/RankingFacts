@@ -1,5 +1,5 @@
-# Notebook of RankingFacts
-This is a notebook version of tool "Ranking Facts". Web-based application can be found in here: http://demo.dataresponsibly.com/rankingfacts/.
+# Notebook version of RankingFacts
+This is a notebook version of tool "Ranking Facts" that runs locally. Web-based application can be found in here: http://demo.dataresponsibly.com/rankingfacts/.
 
 
 ### Assumptions for Input Dataset
@@ -14,9 +14,9 @@ Step 1 Download RankingFacts.
 Step 2 Unzip the downloaded source file and initiate the python environment. We require python version >= 3.6 and < 3.8. Replace "python" to your python version. For example, replace "python" with "python3" and "pip" with "pip3" if your python is called by "python3". 
 
 ```bash
-cd CAIFRank  # go to the RankingFacts repository that is just downloaded
-python -m venv RankingFacts
-source RankingFacts/bin/activate  # activate the environment for RankingFacts
+cd RankingFacts  # go to the RankingFacts repository that is just downloaded
+python -m venv venv
+source venv/bin/activate  # activate the environment for RankingFacts
 pip install -r requirements.txt
 ```
 
