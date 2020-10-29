@@ -5,7 +5,7 @@ This is a notebook version of tool "Ranking Facts" that runs locally. Web-based 
 ### Assumptions for Input Dataset
 
 1. The input dataset is a table that is stored in .CSV file.
-2. We have four real datasets as examples. [dataset README](NotebookVersion/dataset/README.md)
+2. We have four real datasets as examples. [dataset README](https://github.com/DataResponsibly/RankingFacts/blob/master/NotebookVersion/dataset/README.md)
 
 ### Install RankingFacts
 
